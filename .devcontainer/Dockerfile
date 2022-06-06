@@ -66,7 +66,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
     #
     # Starship prompt
     #
-RUN curl -fsSL https://starship.rs/install.sh | bash -s -- --yes \
+RUN curl -fsSL https://starship.rs/install.sh | sh -s -- --yes \
     && echo 'eval "$(starship init bash)"' >> /home/$USERNAME/.bashrc
     #
     # Add sudo support for the non-root user
@@ -100,8 +100,8 @@ RUN sudo apt-get upgrade -y
 RUN sudo apt-get install python3-venv -y
 RUN sudo apt-get install python3-pip -y
 # Install psycopg2 for the prostgrsql database and dotenv
-RUN pip3 install psycopg2-binary
-RUN pip3 install python-dotenv
+RUN pip install psycopg2-binary
+RUN pip install python-dotenv
     #
     # Clean up
     #
