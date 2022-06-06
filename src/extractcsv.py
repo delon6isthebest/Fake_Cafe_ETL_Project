@@ -1,7 +1,8 @@
 
 import csv
+import pandas as pd
 
-def read_csvfile(file_name: str):
+def read_csvfile_into_list(file_name: str):
     try:
         list_dicts = []
         with open(file_name, "r") as f:
@@ -12,4 +13,12 @@ def read_csvfile(file_name: str):
         list_dicts = []
     return list_dicts
 
-print(read_csvfile("test.csv"))
+# print(read_csvfile_into_list("test.csv"))
+
+def read_csvfile_into_dataframe(file_name: str):
+    try:
+        return pd.read_csv(file_name)
+    except FileNotFoundError:
+        return None
+
+# print(read_csvfile_into_dataframe("test.csv"))
