@@ -1,4 +1,4 @@
-# Thoughts: How often should we connect and then close the connection?
+# Thought: How often should we connect and then close the connection?
 # from datetime import datetime
 from dotenv import load_dotenv # To load credentials
 import os
@@ -6,7 +6,7 @@ import os
 import psycopg2 # To connect to PostgreSQL Server
 
 
-# Could error handle connection, if we fail to connect
+# Thought: Could error handle connection, if we fail to connect
 def connect_to_db():
     load_dotenv()
     db_host = os.environ.get("postgresql_host")
@@ -22,11 +22,13 @@ def connect_to_db():
     )
     return (conn, conn.cursor())
 
+# Save changes to DB and then close cursor + connection
 def save_and_close_connection(conn, cursor):
     conn.commit()
     cursor.close()
     conn.close()
 
+# Create tables if they don't exist: products, customers, stores, transactions
 def create_tables(conn, cursor):
     create_products_table = \
         """
@@ -52,6 +54,7 @@ def create_tables(conn, cursor):
             location VARCHAR(20)
         );
         """ 
+    # Thought: Should we also add "bill DECIMAL(19,2)" to the transactions table?
     create_transaction_table = \
         """
         CREATE TABLE IF NOT EXISTS transactions(
