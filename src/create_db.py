@@ -64,7 +64,7 @@ def create_tables(conn, cursor):
             customer_id int NOT NULL REFERENCES customers (id),
             product_id int NOT NULL REFERENCES products (id),
             quantity int,
-            cash_card VARCHAR(10),
+            cash_card VARCHAR(10)
         );
         """       
     cursor.execute(create_products_table)
