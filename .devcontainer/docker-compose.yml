@@ -30,7 +30,7 @@ services:
       - 5432:5432
   adminer:
     image: adminer
-    container_name: adminer_container
+    container_name: adminer_container1  #Change the name of the container here
     restart: always
     ports:
       - 8080:8080
