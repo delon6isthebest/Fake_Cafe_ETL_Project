@@ -1,6 +1,7 @@
 import pandas as pd
+import numpy as np
 import csv
-TEST_CSV = "test.csv"
+TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 
 # TODO: Transform data_frame to 1st Normal Form
@@ -30,13 +31,35 @@ def extract_product_details(df:pd.DataFrame) -> pd.DataFrame:
     
     df[BASKET_COLUMN] = df[BASKET_COLUMN].apply(extract_details)
     df[['size','name','flavour','price']] = pd.DataFrame(df[BASKET_COLUMN].to_list())
+    del df[BASKET_COLUMN]
     return df
 
 
 # TODO: Transform data_frame to 2nd Normal Form
+# Split into multiple tables and assign a foreign key
+
+# Extract the unique products into another DataFrame
+def create_products_df(df):
+    products_df = df[['name','size','flavour','price']]
+    return products_df.drop_duplicates()
+
+# Normalise the transactions: Replace product details with product_id
+def create_transactions_df(df, products_df):
+    df["product_id"] = df['name'] + '-' + df['size'] + '-' + df['flavour'] + '-' + df['price']
+
+    def get_id(product_detail, products_df):
+        return products_df.index[products_df['detail'] == product_detail].tolist()[0]
+
+    products_df['detail'] = products_df['name'] + '-' + products_df['size'] + '-' + products_df['flavour'] + '-' + products_df['price']
+    df["product_id"] = df["product_id"].apply(lambda x: get_id(x, products_df))
+    for column in ['name', 'size', 'flavour', 'price']:
+        del df[column]
+    del products_df['detail']
+    return df
 
 
 # TODO: Transform data_frame to 3rd Normal Form
+
 
 def read_csvfile_into_list(file_name: str):
     try:
@@ -51,8 +74,18 @@ def read_csvfile_into_list(file_name: str):
 
 if __name__ == "__main__":
     df = pd.read_csv(TEST_CSV)
+    del df['card_number']
+    # print(df)
     df = split_basket_items(df)
     # print(df[["transaction_id", BASKET_COLUMN]])
-    df = extract_product_details(df)
-    print(df[['transaction_id','size','name','flavour','price']])
+    extract_product_details(df)
+    # print(df)
+    # print("\n\n")
+
+    products_df = create_products_df(df)
+    print(products_df)
+    print()
+    # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
+    transactions_df = create_transactions_df(df, products_df)
+    print(transactions_df)
     
