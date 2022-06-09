@@ -128,3 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 secretkey.txt
+
+# test data
+test.csv
