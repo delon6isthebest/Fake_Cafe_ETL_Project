@@ -97,7 +97,7 @@ def create_mvp_table(conn,cursor):
             total_price  DECIMAL(19,2),
             cash_or_card VARCHAR(10),
             transaction_id int NOT NULL,
-            product_id int NOT NULL
+            product_id int NOT NULL  REFERENCES productsmvp (id)
         );
         """       
     cursor.execute(create_products_trfmd_table)
