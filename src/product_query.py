@@ -2,7 +2,7 @@
 
 # Import libraries
 from transform_3nf import * # Only needed when testing out how they combine
-from load import load_table
+from load imp
 from create_db import *
 import pandas as pd
 
@@ -10,25 +10,7 @@ import pandas as pd
 # Connection and cursor objects already exist
 # Access the values in DF given the row index
 def query_id(conn, cursor, row_index: int, df:pd.DataFrame):
-    values = df[['name', 'size', 'flavour']].loc[row_index].tolist()
-    print(values)
-    select_query =\
-    """
-    SELECT id
-    FROM productsmvp
-    WHERE name = %s and size = %s and flavour = %s 
-    ;
-    """
-    # Note values is a list of values to be inserted into the SQL command at the placeholders
-    try:
-        cursor.execute(select_query, values) 
-        conn.commit()
-        row = cursor.fetchone()
-        print(row)
-        return row[0]
-    except Exception as e:
-        print(e)    # Product with given details does not exist
-        return row_index * 2
+    return None
 
 # Store queried products id's in a separate column
 def query_product_ids(conn, cursor, df:pd.DataFrame):
@@ -50,7 +32,6 @@ if __name__ == "__main__":
     df = split_basket_items(df)
     extract_product_details(df)
     products_df = create_products_df(df)
-    load_table(products_df)
     transactions_df = create_transactions_df(df, products_df)
     query_product_ids(conn, cursor, products_df)
     print(products_df)
