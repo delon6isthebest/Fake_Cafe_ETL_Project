@@ -2,15 +2,22 @@
 
 # Import libraries
 from transform_3nf import * # Only needed when testing out how they combine
-from load imp
 from create_db import *
 import pandas as pd
 
 # Query database with unique combinations of name, size, flavour and price
 # Connection and cursor objects already exist
 # Access the values in DF given the row index
-def query_id(conn, cursor, row_index: int, df:pd.DataFrame):
-    return None
+def query_id(conn, cursor, row_index: int, products_df:pd.DataFrame):
+    
+    products_name = products_df['name'].loc[row_index]
+    products_size = products_df['size'].loc[row_index]
+    products_flavour = products_df['flavour'].loc[row_index]
+    values = [products_name, products_size, products_flavour]
+    cursor.execute(f'SELECT id FROM productsmvp WHERE name = %s AND size = %s AND flavour = %s', values)
+    sql_id = cursor.fetchone()[0]
+
+    return sql_id
 
 # Store queried products id's in a separate column
 def query_product_ids(conn, cursor, df:pd.DataFrame):
@@ -21,8 +28,6 @@ def query_product_ids(conn, cursor, df:pd.DataFrame):
 def replace_index_with_queried_id(df, products_df):
     df['product_id'] = df['product_id'].apply(lambda x: products_df['queried_id'].loc[x])
     return df
-
-
 
 if __name__ == "__main__":
     # Connect to db and store in variable by creating the connection object and the cursor object

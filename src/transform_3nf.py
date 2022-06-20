@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import csv
+from create_db import connect_to_db
+from product_query import query_id
 TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 
@@ -84,6 +86,8 @@ if __name__ == "__main__":
 
     products_df = create_products_df(df)
     print(products_df)
+    (conn, cursor) = connect_to_db()
+    print(query_id(conn, cursor, 12, products_df))
     print()
     # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
     transactions_df = create_transactions_df(df, products_df)
