@@ -83,9 +83,9 @@ if __name__ == "__main__":
     # print("\n\n")
 
     products_df = create_products_df(df)
-    print(products_df)
-    print()
+    #print(products_df)
+    #print()
     # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
     transactions_df = create_transactions_df(df, products_df)
-    print(transactions_df)
+    #print(transactions_df)
     
