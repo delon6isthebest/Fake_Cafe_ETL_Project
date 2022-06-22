@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
+from load import *
 TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 
@@ -84,8 +85,10 @@ if __name__ == "__main__":
 
     products_df = create_products_df(df)
     print(products_df)
+    #load_table(products_df,'productsmvp')
     print()
     # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
     transactions_df = create_transactions_df(df, products_df)
     print(transactions_df)
+    load_table(transactions_df,'transactionsmvp')
     
