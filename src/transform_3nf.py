@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
+from load import *
 TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 PRODUCT_COLUMNS = ["name", "size", "flavour"]
@@ -97,11 +98,12 @@ def transform_3nf(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     }
 
 if __name__ == "__main__":
+    
     data_df = pd.read_csv(TEST_CSV)
     del data_df['card_number']
-    
     transform_3nf(data_df)
     
     # Print basket items which are multiple-buys within a basket
     # print(basket_df.loc[basket_df.index[basket_df['quantity'] != 1].tolist()])
-    
+
+  
