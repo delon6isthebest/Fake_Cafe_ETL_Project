@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import csv
-from load import *
+from create_db import connect_to_db
+from product_query import query_id
 TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 PRODUCT_COLUMNS = ["name", "size", "flavour"]
@@ -106,4 +107,12 @@ if __name__ == "__main__":
     # Print basket items which are multiple-buys within a basket
     # print(basket_df.loc[basket_df.index[basket_df['quantity'] != 1].tolist()])
 
-  
+    products_df = create_products_df(df)
+    print(products_df)
+    (conn, cursor) = connect_to_db()
+    print(query_id(conn, cursor, 12, products_df))
+    print()
+    # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
+    transactions_df = create_transactions_df(df, products_df)
+    print(transactions_df)
+    
