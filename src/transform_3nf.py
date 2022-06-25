@@ -2,12 +2,15 @@ import pandas as pd
 import numpy as np
 import csv
 from create_db import connect_to_db
-from product_query import query_id
+import uuid
+#from product_query import query_id
 TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 PRODUCT_COLUMNS = ["name", "size", "flavour"]
-TRANSACTION_COLUMNS = ["timestamp", "store", "customer_name", "total_price", "cash_or_card"]
-BASKET_ITEMS_COLUMNS = ["transaction_id", "product_id", "price", "quantity"]
+#TRANSACTION_COLUMNS = ["timestamp", "store", "customer_name", "total_price", "cash_or_card"]
+TRANSACTION_COLUMNS = ["transaction_id","timestamp", "store", "customer_name", "total_price", "cash_or_card"]
+#BASKET_ITEMS_COLUMNS = ["transaction_id", "product_id", "price", "quantity"]
+BASKET_ITEMS_COLUMNS = ["transaction_id", "product_id", "price", "quantity","timestamp", "store", "customer_name", "total_price", "cash_or_card","basket_items"]
 TRANSACTION_ID = "transaction_id"
 PRODUCT_ID = "product_id"
 TRANSACTIONS_TABLE = "transactions"
@@ -17,7 +20,9 @@ BASKET_ITEMS_TABLE = "basket_items"
 # TODO: Transform data_frame to 1st Normal Form
 # First we will split the basket items into separate rows after each comma (counting quantity per basket)
 def split_basket_items(df:pd.DataFrame) -> pd.DataFrame:
-    df[TRANSACTION_ID] = df.index
+    
+    df[TRANSACTION_ID] = df.apply(lambda _: uuid.uuid4(), axis=1)
+    #df[TRANSACTION_ID] = df.index
     def count_items(basket: str) -> list:
         item_count_dict = {}
         items_list = [item.strip() for item in basket.split(",")]
@@ -46,12 +51,10 @@ def extract_product_details(df:pd.DataFrame) -> pd.DataFrame:
         details.extend(other_details)
         details.append(product_count[1])
         return details
-    
     df[BASKET_COLUMN] = df[BASKET_COLUMN].apply(extract_details)
     df[['size','name','flavour','price','quantity']] = pd.DataFrame(df[BASKET_COLUMN].to_list())
-    del df[BASKET_COLUMN]
+    #del df[BASKET_COLUMN]
     return df
-
 
 # Extract some columns for a subtable: 'transactions' and 'products', and replace with row_index
 def extract_subtable(df:pd.DataFrame, subcolumns, foreign_key:str):
@@ -76,43 +79,56 @@ def extract_subtable(df:pd.DataFrame, subcolumns, foreign_key:str):
 # TODO: Transform data_frame to 3rd Normal Form
 
 def transform_3nf(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    transactions_df = extract_subtable(data_df, TRANSACTION_COLUMNS, TRANSACTION_ID)
+    #print(data_df.head())
+    
     # customers_df = extract_subtable(transactions_df, ['customer_name'], 'customer_id')
-    # print(customers_df)
-    # print()
-    # stores_df = extract_subtable(transactions_df, ['store'], 'store_id')
-    # print(stores_df)
-    # print()
-    # print(transactions_df)
-    # print()
+
     basket_df = split_basket_items(data_df)
+    transactions_df = extract_subtable(data_df, TRANSACTION_COLUMNS, TRANSACTION_ID)
     extract_product_details(basket_df)
     products_df = extract_subtable(basket_df, PRODUCT_COLUMNS, PRODUCT_ID)
-    # print(products_df)
-    # print()
-    # print(basket_df)
-    # print()
+    basket_df=basket_df
     return {
         PRODUCTS_TABLE: products_df,
         TRANSACTIONS_TABLE: transactions_df,
         BASKET_ITEMS_TABLE: basket_df[BASKET_ITEMS_COLUMNS]
     }
 
+# After querying ids, replace them in the basket_table
+def replace_index_with_queried_id(df):
+    df['product_id'] = df['basket_items'].apply(query_id)
+    return df
+
+def query_id(basket_item):
+    (conn, cursor) = connect_to_db()
+    
+    product_name = basket_item[1]
+    product_size = basket_item[0]
+    product_flavour = basket_item[2]
+    values = [product_name, product_size, product_flavour]
+    cursor.execute(f'SELECT id FROM products WHERE name = %s AND size = %s AND flavour = %s', values)
+    sql_id = cursor.fetchone()[0]
+
+    return sql_id
+
 if __name__ == "__main__":
+    
     
     data_df = pd.read_csv(TEST_CSV)
     del data_df['card_number']
-    transform_3nf(data_df)
+    #print(data_df)
+    rt=transform_3nf(data_df)
     
-    # Print basket items which are multiple-buys within a basket
-    # print(basket_df.loc[basket_df.index[basket_df['quantity'] != 1].tolist()])
+    rt['basket_items']=replace_index_with_queried_id(rt['basket_items'])
+    rt['basket_items']=rt['basket_items'].drop(['timestamp',
+       'store', 'customer_name', 'total_price', 'cash_or_card',
+       'basket_items'],axis=1)
+    
+    print('PRODUCTS DATAFRAME')
+    print(rt['products'])
+    print('TRANSACTIONS DATAFRAME')
+    print(rt['transactions'].head())
+    print('BASKET DATAFRAME')
+    print(rt['basket_items'].head(20))
+   
 
-    products_df = create_products_df(df)
-    print(products_df)
-    (conn, cursor) = connect_to_db()
-    print(query_id(conn, cursor, 12, products_df))
-    print()
-    # print(products_df.index[(products_df['name'] == 'Latte') & (products_df['size'] == 'Large')])
-    transactions_df = create_transactions_df(df, products_df)
-    print(transactions_df)
-    
