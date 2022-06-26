@@ -224,3 +224,5 @@ timestamp,store,customer_name,basket_items,total_price,cash_or_card,card_number
 06/06/2022 16:53,Chesterfield,Daniela Baptiste,"Large Flat white - 2.45, Large Flat white - 2.45, Large Latte - 2.45, Regular Flavoured iced latte - Vanilla - 2.75, Regular Flavoured latte - Hazelnut - 2.55",12.65,CASH,
 06/06/2022 16:55,Chesterfield,Christopher Duquette,"Large Flavoured iced latte - Hazelnut - 3.25, Regular Flat white - 2.15, Regular Latte - 2.15, Regular Flavoured iced latte - Hazelnut - 2.75",10.3,CARD,9.59673E+15
 06/06/2022 16:57,Chesterfield,Geraldine Sykes,"Regular Flavoured iced latte - Hazelnut - 2.75, Large Latte - 2.45, Regular Flat white - 2.15, Regular Flavoured iced latte - Vanilla - 2.75",10.1,CARD,5.92548E+15
+06/06/2022 16:57,Chesterfield,Geraldine Sykes,"Regular Flavoured Chai latte - Vanilla - 2.75, Large Latte - 2.45, Regular Flat white - 2.15, Regular Flavoured iced latte - Vanilla - 2.75",10.1,CARD,5.92548E+15
+26/06/2022 16:57,Chesterfield,Geraldine Smith,"Regular Flavoured Chai latte - Vanilla - 2.75, Large Latte - 2.45, Regular Flat white - 2.15, Regular Flavoured iced latte - Vanilla - 2.75",10.1,CARD,5.92548E+15
