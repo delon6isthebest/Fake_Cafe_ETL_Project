@@ -16,9 +16,9 @@ def etl(filename):
         
         (conn, cursor)=connect_to_db()
         
-        last_run=get_last_run_time(conn, cursor)
+        last_run=get_last_run_time(conn, cursor) # get the last run time from database
         #print('last run',str(last_run[0])[:10])
-        if last_run is None or str(last_run[0])[:10] != str(date.today()) :
+        if last_run is None or str(last_run[0])[:10] != str(date.today()) : # perform etl only if last run date is not equal to today's date
                 
                 #Extract the csv
                 df=read_csvfile_into_dataframe(filename)
@@ -28,14 +28,14 @@ def etl(filename):
                 df=pii.drop_column(df, 'card_number')   #Drop the card number column from the dataframe
                 rt=transform_3nf(df)
                 #print(rt['products'])
-                rt['products']=get_new_products(rt['products'])
+                rt['products']=get_new_products(rt['products']) # get only those products which are not available in the products table. Insert on the incremental products
                 #print(rt['products'])
                 if not rt['products'].empty:
-                        print('Hi')
+    
                         load_table(rt['products'],'products')
                 rt['basket_items']=replace_index_with_queried_id(rt['basket_items'])
                 rt['basket_items']=rt['basket_items'].drop(['timestamp',
-        'store', 'customer_name', 'total_price', 'cash_or_card','basket_items'],axis=1)
+        'store', 'customer_name', 'total_price', 'cash_or_card','basket_items'],axis=1) # drop columns from basket which are not required in for insertion into the database
                 rt['transactions']=pii.encrypt_pii(rt['transactions'],'customer_name')  #Encrypt the customer name.
                 
                 
@@ -48,21 +48,23 @@ def etl(filename):
                 #print(rt['basket_items'].columns)      
                 
                 # #Load the csv to the db
-                today = date.today()
+                today = date.today() # get today's date
                 df_date=pd.DataFrame(pd.to_datetime(rt['transactions']['timestamp']).dt.date)
                 df_date['timestamp']=df_date['timestamp'].astype(str)
                 #print(df_date['timestamp'].unique())
         
-                if str(today) in df_date['timestamp'].unique():
+                if str(today) in df_date['timestamp'].unique(): # load only if today's date is available in the df's timestamp column. This is to ensure the a file is loaded only if it contains today's data
                         load_table(rt['transactions'],'transactions')               
                         load_table(rt['basket_items'],'basket_items')
                 # # TO DO individual tasks structure code in logical format so app.py can run
                 # # TO DO load transcations
                 
+                #Insert last run date to etl_last_run table
                 insert_query="INSERT INTO etl_last_run VALUES ("+ "'" + str(datetime.now()) + "'" + ")"
                 cursor.execute(insert_query)
                 conn.commit()
-def get_new_products(df):
+# Filters out those products from the df which are already available in the database
+def get_new_products(df):                       
         (conn, cursor)=connect_to_db()
         products_query='SELECT * FROM products'
         cursor.execute(products_query)
@@ -90,8 +92,9 @@ def get_new_products(df):
         #print(df)
         return df
         
+        # Gets etl's last run date
 def get_last_run_time(conn, cursor):
-        query="SELECT * FROM etl_last_run"
+        query="SELECT * FROM etl_last_run" # last run time is stored in the table
         cursor.execute(query)
         last_run_time=cursor.fetchone()
         return last_run_time
