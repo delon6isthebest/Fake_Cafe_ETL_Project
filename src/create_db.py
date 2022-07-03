@@ -74,34 +74,42 @@ def create_tables(conn, cursor):
     cursor.execute(create_transaction_table)
     conn.commit()
 
-def create_mvp_table(conn,cursor):
+def create_mvp_tables(conn,cursor):
     create_products_trfmd_table = \
         """
-        CREATE TABLE IF NOT EXISTS productsmvp(
+        CREATE TABLE IF NOT EXISTS products(
             id SERIAL PRIMARY KEY,
             name VARCHAR(200),
             size VARCHAR(10),
-            flavour VARCHAR(200),
-            price DECIMAL(19,2)
+            flavour VARCHAR(200)
         );
         """
     
     #Almost fully Transformed tables but need to reference productsmvp (id)
-    create_transaction_trfmd_table = \
+    create_transactions_trfmd_table = \
         """
-        CREATE TABLE IF NOT EXISTS transactionsmvp(
-            id SERIAL PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS transactions(
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
             timestamp TIMESTAMP,
             store VARCHAR(200),
-            customer_name VARCHAR(200),
+            customer_name VARCHAR(300),
             total_price  DECIMAL(19,2),
-            cash_or_card VARCHAR(10),
-            transaction_id int NOT NULL,
-            product_id int NOT NULL  REFERENCES productsmvp (id)
+            cash_or_card VARCHAR(10)
+        );
+        """ 
+    create_basket_items_trmd_table = \
+        """
+        CREATE TABLE IF NOT EXISTS basket_items(
+            id SERIAL PRIMARY KEY,
+            transaction_id VARCHAR(36) NOT NULL,
+            product_id int NOT NULL,
+            price DECIMAL(19, 2) NOT NULL,
+            quantity int NOT NULL
         );
         """       
     cursor.execute(create_products_trfmd_table)
-    cursor.execute(create_transaction_trfmd_table)
+    cursor.execute(create_transactions_trfmd_table)
+    cursor.execute(create_basket_items_trmd_table)
     conn.commit()
 
 
@@ -109,6 +117,6 @@ def create_mvp_table(conn,cursor):
 if __name__ ==  "__main__":
     (conn, cursor) = connect_to_db()
     create_tables(conn, cursor)
-    create_mvp_table(conn,cursor)
+    create_mvp_tables(conn,cursor)
     save_and_close_connection(conn, cursor)
 
