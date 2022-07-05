@@ -21,7 +21,8 @@ BASKET_ITEMS_TABLE = "basket_items"
 # First we will split the basket items into separate rows after each comma (counting quantity per basket)
 def split_basket_items(df:pd.DataFrame) -> pd.DataFrame:
     
-    df[TRANSACTION_ID] = df.apply(lambda _: uuid.uuid4(), axis=1)
+    df[TRANSACTION_ID] = df.apply(lambda _: uuid.uuid4(), axis=1) # generate a uuid transaction id for each customer per transaction
+
     #df[TRANSACTION_ID] = df.index
     def count_items(basket: str) -> list:
         item_count_dict = {}
@@ -96,8 +97,11 @@ def transform_3nf(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 # After querying ids, replace them in the basket_table
 def replace_index_with_queried_id(df):
-    df['product_id'] = df['basket_items'].apply(query_id)
+
+    df['product_id'] = df['basket_items'].apply(query_id) # Get the actual product ids against each basket item 
     return df
+
+# Gets the products ids for a basket its from the database
 
 def query_id(basket_item):
     (conn, cursor) = connect_to_db()

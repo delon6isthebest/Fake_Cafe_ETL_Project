@@ -26,28 +26,29 @@ df=pd.read_csv('test.csv')
 
 def drop_column(df,column):
     df.drop(columns=column,inplace=True)
+    return df
 
-drop_column(df,'card_number')
+#drop_column(df,'card_number')
 
 def suppress_pii(df,column):
     fake=Faker()
     df[column]=df[column].apply(lambda x:fake.name())
     return df
 
-print(suppress_pii(df,'customer_name'))
+#print(suppress_pii(df,'customer_name'))
 
 def encryption(value):
     key = Fernet.generate_key()             # Instance the Fernet class with the key
     fernet = Fernet(key)                    # then use the Fernet class instance 
-    encrypted_value = fernet.encrypt(value.encode())     #to encrypt the string string must be encoded to byte string before encryption
+    encrypted_value = fernet.encrypt(value.encode())     #to encrypt the string must be encoded to byte string before encryption
     return encrypted_value
 
 def encrypt_pii(df,column):   
         df[column]=df[column].apply(lambda x:encryption(x))
-        print(df[column])
+        #print(df[column])
         return df
 
-print(encrypt_pii(df,'customer_name'))
+#print(encrypt_pii(df,'customer_name'))
 
 def load_key():                                    #Loads the key named `secret.key` from the current directory.
     return open("secretkey.txt", "rb").read()
@@ -62,7 +63,7 @@ def encrypt_pii(df,column):
     df[column]=df[column].apply(lambda x:encryption(x)) #enrypting the column
     return df            #return the df with encrypted column
 
-print(encrypt_pii(df,'customer_name'))                   #prints dataframe with the pii column decrypted
+#print(encrypt_pii(df,'customer_name'))                   #prints dataframe with the pii column decrypted
 
 load_key()     #loads key for utilisation
 
@@ -75,7 +76,9 @@ def decrypt_message(encrypted_value):             #To decrypt an encrypted messa
 
 def decrypt_pii(df,column):
     df[column]=df[column].apply(lambda x:decrypt_message(x)) #decrypts the previously encrypted column
-    print(df[column])  #prints decrypted column
+    #print(df[column])  #prints decrypted column
     return df                  #return the df with decrypted column
-print(decrypt_pii(df,'customer_name'))               #prints dataframe with the pii column decrypted
+#print(decrypt_pii(df,'customer_name'))               #prints dataframe with the pii column decrypted
 
+
+    

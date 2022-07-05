@@ -32,31 +32,64 @@ def save_and_close_connection(conn, cursor):
 def create_tables(conn, cursor):
     create_products_table = \
         """
-        CREATE TABLE IF NOT EXISTS products(
-            id SERIAL PRIMARY KEY,
-            prod_name VARCHAR(200),
-            prod_size VARCHAR(10),
-            prod_price DECIMAL(19,2)
-        );
-        """
-    create_customers_table = \
-        """
-        CREATE TABLE IF NOT EXISTS customers(
-            id SERIAL PRIMARY KEY,
-            customer_name VARCHAR(200),
-            card_number VARCHAR(20)
-        );
-        """    
-    create_store_table = \
-        """
-        CREATE TABLE IF NOT EXISTS stores(
-            id SERIAL PRIMARY KEY,
-            location VARCHAR(20)
-        );
+        DROP TABLE IF EXISTS "products";
+        DROP SEQUENCE IF EXISTS products_id_seq;
+        CREATE SEQUENCE products_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+        CREATE TABLE "public"."products" (
+            "id" integer DEFAULT nextval('products_id_seq') NOT NULL,
+            "name" character varying,
+            "size" character varying,
+            "flavour" character varying,
+            CONSTRAINT "products_pkey" PRIMARY KEY ("id")
+        ) WITH (oids = false);
         """ 
-    # Thought: Should we also add "bill DECIMAL(19,2)" to the transactions table?
+    # Create the transactions table
     create_transaction_table = \
         """
+        DROP TABLE IF EXISTS "transactions";
+        DROP SEQUENCE IF EXISTS "transactions_ID_seq";
+        CREATE SEQUENCE "transactions_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+        CREATE TABLE "public"."transactions" (
+            "ID" integer DEFAULT nextval('"transactions_ID_seq"') NOT NULL,
+            "transaction_id" uuid NOT NULL,
+            "timestamp" timestamp NOT NULL,
+            "store" character varying,
+            "customer_name" character varying,
+            "total_price" numeric,
+            "cash_or_card" character varying,
+            "load_date" date DEFAULT CURRENT_DATE NOT NULL,
+            CONSTRAINT "transactions_pkey" PRIMARY KEY ("ID"),
+            CONSTRAINT "transactions_transaction_id" UNIQUE ("transaction_id")
+        ) WITH (oids = false);
+        """      
+    create_basket_items_table=\
+        """
+        DROP TABLE IF EXISTS "basket_items";
+            DROP SEQUENCE IF EXISTS "basket_items_ID_seq";
+            CREATE SEQUENCE "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+            CREATE TABLE "public"."basket_items" (
+                "ID" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
+                "transaction_id" uuid NOT NULL,
+                "product_id" integer NOT NULL,
+                "price" numeric,
+                "quantity" integer,
+                "load_date" date DEFAULT CURRENT_DATE NOT NULL,
+                CONSTRAINT "basket_items_pkey" PRIMARY KEY ("ID")
+            ) WITH (oids = false);
+        ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) NOT DEFERRABLE;
+        ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_transaction_id_fkey" FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) NOT DEFERRABLE;
+        """
+    create_etl_last_run_table=\
+        """
+        DROP TABLE IF EXISTS "etl_last_run";
+        CREATE TABLE "public"."etl_last_run" (
+            "last_run_time" timestamp NOT NULL
+        ) WITH (oids = false);
+        """
+
         CREATE TABLE IF NOT EXISTS transactions(
             id SERIAL PRIMARY KEY,
             timestamp TIMESTAMP,
@@ -67,11 +100,11 @@ def create_tables(conn, cursor):
             cash_card VARCHAR(10)
         );
         """       
-        
+
     cursor.execute(create_products_table)
-    cursor.execute(create_customers_table)
-    cursor.execute(create_store_table)
     cursor.execute(create_transaction_table)
+    cursor.execute(create_basket_items_table)
+    cursor.execute(create_etl_last_run_table)
     conn.commit()
 
 def create_mvp_table(conn,cursor):
