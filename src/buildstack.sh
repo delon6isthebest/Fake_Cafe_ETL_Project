@@ -1,1 +1,1 @@
-aws cloudformation deploy --template-file templates/T1cloudformation.yaml --stack-name genteam1stk  --region eu-west-1 --parameter-overrides NotificationBucket=rawt3data --capabilities CAPABILITY_IAM
+aws cloudformation deploy --template-file C:/Users/dawid/team-1-project/templates/T1cloudformation.yaml --stack-name genteam1stk  --region eu-west-1  --parameter-overrides ParameterKey=NotificationBucket,ParameterValue=delon6-team1-raw-data --capabilities CAPABILITY_IAM
