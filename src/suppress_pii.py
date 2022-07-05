@@ -25,6 +25,7 @@ def generate_key():                        #Generates a key and save it into a f
 
 def drop_column(df,column):
     df.drop(columns=column,inplace=True)
+    return df
 
 # drop_column(df,'card_number')
 
@@ -38,12 +39,12 @@ def suppress_pii(df,column):
 def encryption(value):
     key = Fernet.generate_key()             # Instance the Fernet class with the key
     fernet = Fernet(key)                    # then use the Fernet class instance 
-    encrypted_value = fernet.encrypt(value.encode())     #to encrypt the string string must be encoded to byte string before encryption
+    encrypted_value = fernet.encrypt(value.encode())     #to encrypt the string must be encoded to byte string before encryption
     return encrypted_value
 
 def encrypt_pii(df,column):   
         df[column]=df[column].apply(lambda x:encryption(x))
-        print(df[column])
+        #print(df[column])
         return df
 
 # print(encrypt_pii(df,'customer_name'))
@@ -77,7 +78,9 @@ def decrypt_message(encrypted_value):             #To decrypt an encrypted messa
 
 def decrypt_pii(df,column):
     df[column]=df[column].apply(lambda x:decrypt_message(x)) #decrypts the previously encrypted column
-    print(df[column])  #prints decrypted column
+    #print(df[column])  #prints decrypted column
     return df                  #return the df with decrypted column
 # print(decrypt_pii(df,'customer_name'))               #prints dataframe with the pii column decrypted
 
+
+    

@@ -10,10 +10,10 @@ from product_query import query_product_ids, replace_index_with_queried_id
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
 BASKET_ITEMS_TABLE = "basket_items"
+from create_conn_string import create_conn_string
 
 def load_table(df,table):  #pass in pandasdataframe and table in database
-    load_dotenv()
-    conn_string = os.environ.get("conn_string")
+    conn_string = create_conn_string()
     db = create_engine(conn_string)
     conn = db.connect()
     df.to_sql(table, con=conn, if_exists='append',

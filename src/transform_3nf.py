@@ -106,8 +106,11 @@ def third_normal_form(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 # After querying ids, replace them in the basket_table
 def replace_index_with_queried_id(df):
-    df['product_id'] = df['basket_items'].apply(query_id)
+
+    df['product_id'] = df['basket_items'].apply(query_id) # Get the actual product ids against each basket item 
     return df
+
+# Gets the products ids for a basket its from the database
 
 def query_id(basket_item):
     (conn, cursor) = connect_to_db()
