@@ -1,11 +1,8 @@
 # Situation product details from the dataframe has been loaded into the table
 
 # Import libraries
-from distutils.sysconfig import customize_compiler
-from transform_3nf import * # Only needed when testing out how they combine
-from create_db import *
 import pandas as pd
-
+PRODUCTS_COLUMNS = ['name', 'size', 'flavour']
 # Query database with unique combinations of name, size, flavour and price
 # Connection and cursor objects already exist
 # Access the values in DF given the row index
@@ -15,7 +12,7 @@ def query_id(conn, cursor, row_index: int, products_df:pd.DataFrame):
     products_size = products_df['size'].loc[row_index]
     products_flavour = products_df['flavour'].loc[row_index]
     values = [products_name, products_size, products_flavour]
-    cursor.execute(f'SELECT id FROM productsmvp WHERE name = %s AND size = %s AND flavour = %s', values)
+    cursor.execute(f'SELECT id FROM products WHERE name = %s AND size = %s AND flavour = %s', values)
     sql_id = cursor.fetchone()[0]
 
     return sql_id
@@ -30,10 +27,12 @@ def replace_index_with_queried_id(df, products_df):
     df['product_id'] = df['product_id'].apply(lambda x: products_df['queried_id'].loc[x])
     return df
 
-
-                                                    
+# TODO: Define function that determines which products are new. Then call it in load.py
+                                    
                                                     
 if __name__ == "__main__":
+    from transform_3nf import * # Only needed when testing out how they combine
+    from create_db import *
     # Connect to db and store in variable by creating the connection object and the cursor object
     (conn, cursor) = connect_to_db()
     # df = pd.read_csv(TEST_CSV)
