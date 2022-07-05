@@ -89,7 +89,7 @@ def extract_subtable(df:pd.DataFrame, subcolumns:list[str], foreign_key:str):
 
 def third_normal_form(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     #TODO: Add UUIDs in column data_df[TRANSACTION_UUID]
-    data_df[TRANSACTION_UUID] = data_df.index
+    data_df[TRANSACTION_UUID] = data_df.apply(lambda _: uuid.uuid4(), axis=1)
     # Start 3NF
     transactions_df = extract_subtable(data_df, TRANSACTION_COLUMNS, TRANSACTION_ID)
     # customers_df = extract_subtable(transactions_df, ['customer_name'], 'customer_id')
