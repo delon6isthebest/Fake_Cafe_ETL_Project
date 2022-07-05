@@ -59,7 +59,7 @@ def extract_product_details(df:pd.DataFrame) -> pd.DataFrame:
     return df
 
 # Extract some columns for a subtable: 'transactions' and 'products', and replace with row_index
-def extract_subtable(df:pd.DataFrame, subcolumns:list[str], foreign_key:str):
+def extract_subtable(df:pd.DataFrame, subcolumns:list, foreign_key:str):
     subtable_df = df[subcolumns].drop_duplicates()
 
     if foreign_key != TRANSACTION_ID:
@@ -87,7 +87,7 @@ def extract_subtable(df:pd.DataFrame, subcolumns:list[str], foreign_key:str):
 
 # Transform data_frame to 3rd Normal Form
 
-def third_normal_form(data_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def third_normal_form(data_df: pd.DataFrame) -> dict:
     #TODO: Add UUIDs in column data_df[TRANSACTION_UUID]
     data_df[TRANSACTION_UUID] = data_df.apply(lambda _: uuid.uuid4(), axis=1)
     # Start 3NF
