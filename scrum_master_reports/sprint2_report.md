@@ -27,8 +27,21 @@ export AWS_DEFAULT=learner-profile
 ```
 
 ### 3. Create Lambda Function
-
-
+Navigate to lambda in aws,go to create a function and choose the 'use a bluepint' option.
+Select the s3-get-object-python
+Go to configure
+Enter a preffered name to create new role for the  function.
+Navigate to policy templates and attach 'Amazon S3 object read-only permissions'.
+## 3a Set S3 Trigger
+Navigate to S3 Trigger Select bucket
+Select Event Type AS (PUT)
+Function templates appears below
+Then create function
+Before a connection to be made to the database, our lambda should be connected to the same
+VPC in the redshift cluster created for us which is 'redshiftcluter-8pp4d8ut2ly.
+After setting that up,we need to make sure we have the necessary polices/permissons in our Role 
+So we attached the AmazonEC2FullAccess policy to our role before setting up the VPC.
+Now our lambda is connected to the same redshift cluster that connects to our database,we can now devise a way to connect our labda to the data base.
 ### 4. 
 
 
