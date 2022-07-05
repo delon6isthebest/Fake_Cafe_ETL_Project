@@ -90,16 +90,16 @@ def create_tables(conn, cursor):
         ) WITH (oids = false);
         """
 
-        CREATE TABLE IF NOT EXISTS transactions(
-            id SERIAL PRIMARY KEY,
-            timestamp TIMESTAMP,
-            store_id int NOT NULL REFERENCES stores (id),
-            customer_id int NOT NULL REFERENCES customers (id),
-            product_id int NOT NULL REFERENCES products (id),
-            quantity int,
-            cash_card VARCHAR(10)
-        );
-        """       
+        # CREATE TABLE IF NOT EXISTS transactions(
+        #     id SERIAL PRIMARY KEY,
+        #     timestamp TIMESTAMP,
+        #     store_id int NOT NULL REFERENCES stores (id),
+        #     customer_id int NOT NULL REFERENCES customers (id),
+        #     product_id int NOT NULL REFERENCES products (id),
+        #     quantity int,
+        #     cash_card VARCHAR(10)
+        # );
+        # """       
 
     cursor.execute(create_products_table)
     cursor.execute(create_transaction_table)

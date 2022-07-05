@@ -1,5 +1,5 @@
 from extractcsv import read_csvfile_into_dataframe
-import ticket_10 as pii
+import suppress_pii as pii
 from transform_3nf import third_normal_form
 from create_db import connect_to_db, create_mvp_tables, save_and_close_connection
 from load import load_mvp_tables
