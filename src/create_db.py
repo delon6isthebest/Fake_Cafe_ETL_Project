@@ -89,15 +89,59 @@ def create_tables(conn, cursor):
             "last_run_time" timestamp NOT NULL
         ) WITH (oids = false);
         """
+
+        CREATE TABLE IF NOT EXISTS transactions(
+            id SERIAL PRIMARY KEY,
+            timestamp TIMESTAMP,
+            store_id int NOT NULL REFERENCES stores (id),
+            customer_id int NOT NULL REFERENCES customers (id),
+            product_id int NOT NULL REFERENCES products (id),
+            quantity int,
+            cash_card VARCHAR(10)
+        );
+        """       
+
     cursor.execute(create_products_table)
     cursor.execute(create_transaction_table)
     cursor.execute(create_basket_items_table)
     cursor.execute(create_etl_last_run_table)
     conn.commit()
 
+def create_mvp_table(conn,cursor):
+    create_products_trfmd_table = \
+        """
+        CREATE TABLE IF NOT EXISTS productsmvp(
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(200),
+            size VARCHAR(10),
+            flavour VARCHAR(200),
+            price DECIMAL(19,2)
+        );
+        """
+    
+    #Almost fully Transformed tables but need to reference productsmvp (id)
+    create_transaction_trfmd_table = \
+        """
+        CREATE TABLE IF NOT EXISTS transactionsmvp(
+            id SERIAL PRIMARY KEY,
+            timestamp TIMESTAMP,
+            store VARCHAR(200),
+            customer_name VARCHAR(200),
+            total_price  DECIMAL(19,2),
+            cash_or_card VARCHAR(10),
+            transaction_id int NOT NULL,
+            product_id int NOT NULL  REFERENCES productsmvp (id)
+        );
+        """       
+    cursor.execute(create_products_trfmd_table)
+    cursor.execute(create_transaction_trfmd_table)
+    conn.commit()
+
+
 # Prevents calling those methods when importing to another module
 if __name__ ==  "__main__":
     (conn, cursor) = connect_to_db()
     create_tables(conn, cursor)
+    create_mvp_table(conn,cursor)
     save_and_close_connection(conn, cursor)
 
