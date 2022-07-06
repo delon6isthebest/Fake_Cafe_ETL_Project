@@ -1,17 +1,21 @@
 # Thought: How often should we connect and then close the connection?
 # from datetime import datetime
+import json
 from dotenv import load_dotenv # To load credentials
 import os
 # import pprint
 import psycopg2 # To connect to PostgreSQL Server
 import boto3
 
-
 #connect to RSDB
 def connect_db():
     ssm = boto3.client('ssm')
     parameter = ssm.get_parameter(Name='redshift-cluster-master-pass', WithDecryption=True)
     password = parameter['Parameter']['Value']
+    
+    parameter = ssm.get_parameter(Name='team1-redshift', WithDecryption=False)
+    db_dict = json.loads(parameter['Parameter']['Value'])
+    print(db_dict)
      
     conn = psycopg2.connect(dbname = os.environ.get(dbname),
                             host = os.environ.get(host),

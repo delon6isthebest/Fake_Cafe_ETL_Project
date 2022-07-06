@@ -5,7 +5,7 @@ from faker import Faker
 import pandas as pd
 pd.set_option('display.max_colwidth', None)
 from cmath import nan
-
+import boto3
 
 # df = pd.read_csv('test.csv')          #Reading csv file from src directory
 
@@ -50,10 +50,14 @@ def encrypt_pii(df,column):
 # print(encrypt_pii(df,'customer_name'))
 
 def load_key():
-    try:                                    #Loads the key named `secret.key` from the current directory.
-        return open("secretkey.txt", "rb").read()
-    except:
-        return generate_key()
+    ssm = boto3.client('ssm')
+    parameter = ssm.get_parameter(Name='team1-encryption', WithDecryption=True)
+    return parameter['Parameter']['Value']
+
+#     try:                                    #Loads the key named `secret.key` from the current directory.
+#         return open("secretkey.txt", "rb").read()
+#     except:
+#         return generate_key()
 
 def encryption(value):  
     key = load_key()        #Accessing previously generated key
