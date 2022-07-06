@@ -64,16 +64,18 @@ def create_tables(conn, cursor):
         CREATE SEQUENCE "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
 
         CREATE TABLE IF NOT EXISTS "public"."basket_items" (
-            "ID" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
-            "transaction_id" uuid NOT NULL,
-            "product_id" integer NOT NULL,
+            "id" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
+            "transaction_id" uuid NOT NULL REFERENCES transactions(transaction_id),
+            "product_id" integer NOT NULL REFERENCES products(id),
             "price" numeric,
             "quantity" integer,
             CONSTRAINT "basket_items_pkey" PRIMARY KEY ("id")
         ) WITH (oids = false);
-        ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) NOT DEFERRABLE;
-        ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_transaction_id_fkey" FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) NOT DEFERRABLE;
         """
+
+        # ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) NOT DEFERRABLE;
+        # ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_transaction_id_fkey" FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) NOT DEFERRABLE;
+
     # create_etl_last_run_table=\
     #     """
     #     DROP TABLE IF EXISTS "etl_last_run";
