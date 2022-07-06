@@ -32,7 +32,7 @@ def save_and_close_connection(conn, cursor):
 def create_tables(conn, cursor):
     create_products_table = \
         """
-        CREATE SEQUENCE products_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+        CREATE SEQUENCE IF NOT EXISTS products_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
 
         CREATE TABLE IF NOT EXISTS "public"."products" (
             "id" integer DEFAULT nextval('products_id_seq') NOT NULL,
@@ -45,7 +45,7 @@ def create_tables(conn, cursor):
     # Create the transactions table
     create_transaction_table = \
         """
-        CREATE SEQUENCE "transactions_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+        CREATE SEQUENCE IF NOT EXISTS "transactions_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
 
         CREATE TABLE IF NOT EXISTS "public"."transactions" (
             "id" integer DEFAULT nextval('"transactions_ID_seq"') NOT NULL,
@@ -61,7 +61,7 @@ def create_tables(conn, cursor):
         """      
     create_basket_items_table=\
         """
-        CREATE SEQUENCE "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+        CREATE SEQUENCE IF NOT EXISTS "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
 
         CREATE TABLE IF NOT EXISTS "public"."basket_items" (
             "id" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
