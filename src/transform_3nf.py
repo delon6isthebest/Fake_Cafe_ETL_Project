@@ -8,7 +8,7 @@ TEST_CSV = "test.csv" # Located in 'src' folder
 BASKET_COLUMN = "basket_items"
 # Columns to be extracted for products_df, index column acts as a local primary key
 PRODUCT_COLUMNS = ["name", "size", "flavour"]
-TRANSACTION_UUID = "id"
+TRANSACTION_UUID = "transaction_id"
 # Columns to be extracted for transactions_df, after UUIDs have been generated
 TRANSACTION_COLUMNS = [TRANSACTION_UUID, "timestamp", "store", "customer_name", "total_price", "cash_or_card"]
 # TRANSACTION_COLUMNS = ["transaction_id","timestamp", "store", "customer_name", "total_price", "cash_or_card"]

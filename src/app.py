@@ -1,7 +1,7 @@
 from extractcsv import read_csvfile_into_dataframe
 import suppress_pii as pii
 from transform_3nf import third_normal_form
-from create_db import connect_to_db, create_mvp_tables, save_and_close_connection
+from create_db import connect_to_db, create_tables, save_and_close_connection
 from load import load_mvp_tables
 
 FILE_NAME = "test.csv" # stored in src/ directory
@@ -27,7 +27,8 @@ def etl_file(file_name: str):
     # 1. Connect to database (To connect to AWS Redshift, use the one defined in the AWS console)
     (conn, cursor) = connect_to_db()
     # 2. Create tables if they don't exist: transactions, products, basket_items
-    create_mvp_tables(conn, cursor) # TODO: Adjust so that it works for Redshift
+    create_tables(conn, cursor)
+    #(conn, cursor) # TODO: Adjust so that it works for Redshift
     # 3. Load transformed tables
     load_mvp_tables(conn, cursor, table_dict)   # TODO: Determine new products
     # 4. Save changes and close connection
