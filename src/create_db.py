@@ -4,23 +4,38 @@ from dotenv import load_dotenv # To load credentials
 import os
 # import pprint
 import psycopg2 # To connect to PostgreSQL Server
+import boto3
 
+
+#connect to RSDB
+def connect_db():
+    ssm = boto3.client('ssm')
+    parameter = ssm.get_parameter(Name='redshift-cluster-master-pass', WithDecryption=True)
+    password = parameter['Parameter']['Value']
+     
+    conn = psycopg2.connect(dbname = os.environ.get(dbname),
+                            host = os.environ.get(host),
+                            port = os.environ.get(port),
+                            user = os.environ.get(user),
+                            password = password)
+   
+    return (conn, conn.cursor())
 
 # Thought: Could error handle connection, if we fail to connect
-def connect_to_db():
-    load_dotenv()
-    db_host = os.environ.get("postgresql_host")
-    db_user = os.environ.get("postgresql_user")
-    db_password = os.environ.get("postgresql_pass")
-    db = os.environ.get("postgresql_db")
+# def connect_to_db():
+#     load_dotenv()
+#     db_host = os.environ.get("postgresql_host")
+#     db_user = os.environ.get("postgresql_user")
+#     db_password = os.environ.get("postgresql_pass")
+#     db = os.environ.get("postgresql_db")
 
-    conn = psycopg2.connect(
-        host = db_host,
-        user = db_user,
-        password = db_password,
-        dbname = db
-    )
-    return (conn, conn.cursor())
+#     conn = psycopg2.connect(
+#         host = db_host,
+#         user = db_user,
+#         password = db_password,
+#         dbname = db
+#     )
+#     return (conn, conn.cursor())
 
 # Save changes to DB and then close cursor + connection
 def save_and_close_connection(conn, cursor):

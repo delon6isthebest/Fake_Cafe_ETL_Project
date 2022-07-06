@@ -5,7 +5,7 @@ import pandas as pd
 import psycopg2.extras as extras
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
-from product_query import query_product_ids, replace_index_with_queried_id
+from product_query import get_new_products, query_product_ids, replace_index_with_queried_id
 
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
@@ -31,7 +31,7 @@ def load_mvp_tables(conn, cursor, table_dict):
     load_table(transactions_df, TRANSACTIONS_TABLE)
     products_df = table_dict[PRODUCTS_TABLE]
     baskets_df = table_dict[BASKET_ITEMS_TABLE]
-    new_products_df = products_df                       #TODO: Call the function defined in product_query.py
+    new_products_df = get_new_products(conn, cursor, products_df)                      #TODO: Call the function defined in product_query.py
     load_table(new_products_df, PRODUCTS_TABLE)
     query_product_ids(conn, cursor, products_df)
     replace_index_with_queried_id(baskets_df, products_df)

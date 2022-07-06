@@ -18,7 +18,7 @@ def read_csvfile_into_list(file_name: str):
 def read_csvfile_into_dataframe(file_name: str):
     try:
         df = pd.read_csv(file_name)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], format = '%d/%m/%Y %H:%M')       
+        df['timestamp'] = pd.to_datetime(df['timestamp'], format = '%Y/%m/%d %H:%M')       
         return df
     except FileNotFoundError:
 

@@ -28,7 +28,32 @@ def replace_index_with_queried_id(df, products_df):
     return df
 
 # TODO: Define function that determines which products are new. Then call it in load.py
-                                    
+def get_new_products(conn, cursor, df):
+        products_query='SELECT * FROM products'
+        cursor.execute(products_query)
+        pdt_table_data=cursor.fetchall()
+        pdt_table_data_df=pd.DataFrame.from_records(pdt_table_data, columns=[x[0] for x in cursor.description])
+        pdt_table_data_df['master'] = 'master'
+        pdt_table_data_df.set_index('master', append=True, inplace=True)
+        #print(pdt_table_data_df)
+        df['daily'] = 'daily'
+        df.set_index('daily', append=True, inplace=True)
+        #print(df)
+
+        merged = pdt_table_data_df.append(df)
+        #print(merged)
+        merged = merged.drop_duplicates(subset=['name', 'size','flavour'], keep=False).sort_index()
+        #print('Merged:',merged)
+        idx = pd.IndexSlice
+        #print(idx)
+        if not merged.empty:
+                merged=merged.loc[idx[:, 'daily'], :]
+                #print(merged)
+                merged=merged.reset_index(drop=True)
+                #print(merged)
+        return merged.drop(['id'],axis=1)
+        #print(df)
+        #return df                                    
                                                     
 if __name__ == "__main__":
     from transform_3nf import * # Only needed when testing out how they combine
