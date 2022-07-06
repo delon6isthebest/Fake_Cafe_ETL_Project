@@ -7,23 +7,37 @@ import os
 import psycopg2 # To connect to PostgreSQL Server
 import boto3
 
-#connect to RSDB
-def connect_db():
+def load_db_credentials():
     ssm = boto3.client('ssm')
     parameter = ssm.get_parameter(Name='redshift-cluster-master-pass', WithDecryption=True)
     password = parameter['Parameter']['Value']
     
     parameter = ssm.get_parameter(Name='team1-redshift', WithDecryption=False)
     db_dict = json.loads(parameter['Parameter']['Value'])
-    print(db_dict)
-     
-    conn = psycopg2.connect(dbname = os.environ.get(dbname),
-                            host = os.environ.get(host),
-                            port = os.environ.get(port),
-                            user = os.environ.get(user),
-                            password = password)
+    db_dict["password"] = password
+    return db_dict 
+
+
+#connect to RSDB
+def connect_db():
+    db_dict = load_db_credentials()
+
+    conn = psycopg2.connect(dbname = db_dict['dbname'],
+                            host = db_dict["endpoint"],
+                            port = db_dict['port'],
+                            user = db_dict['login'],
+                            password = db_dict["password"])
+
+    # conn = psycopg2.connect(dbname = os.environ.get(dbname),
+    #                         host = os.environ.get(host),
+    #                         port = os.environ.get(port),
+    #                         user = os.environ.get(user),
+    #                         password = password)
    
     return (conn, conn.cursor())
+
+
+
 
 # Thought: Could error handle connection, if we fail to connect
 # def connect_to_db():
@@ -159,10 +173,10 @@ def create_mvp_tables(conn,cursor):
     conn.commit()
 
 
-# Prevents calling those methods when importing to another module
-if __name__ ==  "__main__":
-    (conn, cursor) = connect_to_db()
-    create_tables(conn, cursor)
-    create_mvp_tables(conn,cursor)
-    save_and_close_connection(conn, cursor)
+# # Prevents calling those methods when importing to another module
+# if __name__ ==  "__main__":
+#     (conn, cursor) = connect_to_db()
+    # create_tables(conn, cursor)
+    # create_mvp_tables(conn,cursor)
+    # save_and_close_connection(conn, cursor)
 
