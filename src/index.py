@@ -1,3 +1,4 @@
+# TODO: Package all dependencies: cryptography, 
 import pandas as pd
 import urllib.parse
 import boto3
@@ -6,11 +7,13 @@ import sqlalchemy
 import os
 from extractcsv import read_csvfile_into_dataframe
 #from test_table import create_sales_tables
-from load import  load_table
+from load import *
 #from transform_3nf import *
 #from suppress_pii import encrypt_pii,decrypt_pii
 from transform_3nf import third_normal_form
 import suppress_pii as pii
+
+from create_db import *
 
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
@@ -35,23 +38,31 @@ def handler(event, context):
     s3.download_file(bucket, key, file_name)
     #lst = os.listdir()
     #print(lst)
-     #Extract the csv
+    
+    #Extract the csv
     data_df = read_csvfile_into_dataframe(file_name)
     #print(df)
     #Drop the card number column from the dataframe
-    #df=pii.drop_column(df, 'card_number')   
-    #rt=transform_3nf(df)
+    
     
     pii.drop_column(data_df, "card_number")
-    pii.encrypt_pii(data_df, "customer_name")
+    # secretkey = pii.load_key()
+    # pii.encrypt_pii(data_df, "customer_name")
     # 3. Generate UUID for transactions, then efficently represent the cleaned data
     table_dict = third_normal_form(data_df)     # TODO: In line 92, add UUID
-    print(table_dict[TRANSACTIONS_TABLE])
-    print(table_dict[PRODUCTS_TABLE])
-    print(table_dict[BASKET_ITEMS_TABLE])
+    # print(table_dict[TRANSACTIONS_TABLE])
+    # print(table_dict[PRODUCTS_TABLE])
+    # print(table_dict[BASKET_ITEMS_TABLE])
     
+    # SQS
     
+    #LOAD
     
+    # Connect to Redshift using Psycopg2
+    (conn, cursor) = connect_db()
+    create_tables(conn, cursor)
+    load_mvp_tables(conn, cursor, table_dict)
+    save_and_close_connection(conn, cursor)
     
     
     

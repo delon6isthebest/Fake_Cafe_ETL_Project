@@ -1,25 +1,43 @@
 # Thought: How often should we connect and then close the connection?
 # from datetime import datetime
-from dotenv import load_dotenv # To load credentials
+import json
+# from dotenv import load_dotenv # To load credentials
 import os
 # import pprint
 import psycopg2 # To connect to PostgreSQL Server
 import boto3
 
-
-#connect to RSDB
-def connect_db():
+def load_db_credentials():
     ssm = boto3.client('ssm')
     parameter = ssm.get_parameter(Name='redshift-cluster-master-pass', WithDecryption=True)
     password = parameter['Parameter']['Value']
-     
-    conn = psycopg2.connect(dbname = os.environ.get(dbname),
-                            host = os.environ.get(host),
-                            port = os.environ.get(port),
-                            user = os.environ.get(user),
-                            password = password)
+    
+    parameter = ssm.get_parameter(Name='team1-redshift-credentials', WithDecryption=True)
+    db_dict = json.loads(parameter['Parameter']['Value'])
+    db_dict["password"] = password
+    return db_dict
+
+
+#connect to RSDB
+def connect_db():
+    db_dict = load_db_credentials()
+
+    conn = psycopg2.connect(dbname = db_dict['dbname'],
+                            host = db_dict["endpoint"],
+                            port = db_dict['port'],
+                            user = db_dict['login'],
+                            password = db_dict["password"])
+
+    # conn = psycopg2.connect(dbname = os.environ.get(dbname),
+    #                         host = os.environ.get(host),
+    #                         port = os.environ.get(port),
+    #                         user = os.environ.get(user),
+    #                         password = password)
    
     return (conn, conn.cursor())
+
+
+
 
 # Thought: Could error handle connection, if we fail to connect
 # def connect_to_db():
@@ -45,47 +63,49 @@ def save_and_close_connection(conn, cursor):
 
 # Create tables if they don't exist: products, customers, stores, transactions
 def create_tables(conn, cursor):
+    # CREATE SEQUENCE IF NOT EXISTS products_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+    # "id" integer DEFAULT nextval('products_id_seq') NOT NULL,
+    #  WITH (oids = false)
+    
     create_products_table = \
         """
-        CREATE SEQUENCE IF NOT EXISTS products_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
-
         CREATE TABLE IF NOT EXISTS "public"."products" (
-            "id" integer DEFAULT nextval('products_id_seq') NOT NULL,
-            "name" character varying,
-            "size" character varying,
-            "flavour" character varying,
+            "id" BIGINT IDENTITY(1,1),
+            "name" VARCHAR(100),
+            "size" VARCHAR(20),
+            "flavour" VARCHAR(100),
             CONSTRAINT "products_pkey" PRIMARY KEY ("id")
-        ) WITH (oids = false);
+        );
         """ 
     # Create the transactions table
+    # CREATE SEQUENCE IF NOT EXISTS "transactions_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+    # "id" integer DEFAULT nextval('"transactions_ID_seq"') NOT NULL,
     create_transaction_table = \
         """
-        CREATE SEQUENCE IF NOT EXISTS "transactions_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
-
         CREATE TABLE IF NOT EXISTS "public"."transactions" (
-            "id" integer DEFAULT nextval('"transactions_ID_seq"') NOT NULL,
-            "transaction_id" uuid NOT NULL,
+            "id" BIGINT IDENTITY(1,1),
+            "transaction_id" VARCHAR(36) NOT NULL,
             "timestamp" timestamp NOT NULL,
-            "store" character varying,
-            "customer_name" character varying,
-            "total_price" numeric,
-            "cash_or_card" character varying,
+            "store" VARCHAR(100),
+            "customer_name" VARCHAR(300),
+            "total_price" numeric(6,2),
+            "cash_or_card" VARCHAR(10),
             CONSTRAINT "transactions_pkey" PRIMARY KEY ("id"),
             CONSTRAINT "transactions_transaction_id" UNIQUE ("transaction_id")
-        ) WITH (oids = false);
-        """      
+        );
+        """
+    #  CREATE SEQUENCE IF NOT EXISTS "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+    # "id" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
     create_basket_items_table=\
         """
-        CREATE SEQUENCE IF NOT EXISTS "basket_items_ID_seq" INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
-
         CREATE TABLE IF NOT EXISTS "public"."basket_items" (
-            "id" integer DEFAULT nextval('"basket_items_ID_seq"') NOT NULL,
-            "transaction_id" uuid NOT NULL REFERENCES transactions(transaction_id),
-            "product_id" integer NOT NULL REFERENCES products(id),
-            "price" numeric,
-            "quantity" integer,
+            "id" BIGINT IDENTITY(1,1),
+            "transaction_id" VARCHAR(36) NOT NULL REFERENCES transactions(transaction_id),
+            "product_id" BIGINT NOT NULL REFERENCES products(id),
+            "price" numeric(5,2),
+            "quantity" INT,
             CONSTRAINT "basket_items_pkey" PRIMARY KEY ("id")
-        ) WITH (oids = false);
+        );
         """
 
         # ALTER TABLE ONLY "public"."basket_items" ADD CONSTRAINT "basket_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) NOT DEFERRABLE;
@@ -155,10 +175,10 @@ def create_mvp_tables(conn,cursor):
     conn.commit()
 
 
-# Prevents calling those methods when importing to another module
-if __name__ ==  "__main__":
-    (conn, cursor) = connect_to_db()
-    create_tables(conn, cursor)
-    create_mvp_tables(conn,cursor)
-    save_and_close_connection(conn, cursor)
+# # Prevents calling those methods when importing to another module
+# if __name__ ==  "__main__":
+#     (conn, cursor) = connect_to_db()
+    # create_tables(conn, cursor)
+    # create_mvp_tables(conn,cursor)
+    # save_and_close_connection(conn, cursor)
 
