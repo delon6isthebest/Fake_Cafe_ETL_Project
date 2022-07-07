@@ -1,9 +1,6 @@
 # Thought: How often should we connect and then close the connection?
 # from datetime import datetime
 import json
-# from dotenv import load_dotenv # To load credentials
-import os
-# import pprint
 import psycopg2 # To connect to PostgreSQL Server
 import boto3
 
