@@ -4,20 +4,18 @@ import os
 import pandas as pd
 import psycopg2.extras as extras
 from sqlalchemy import create_engine
-from dotenv import load_dotenv
 from product_query import get_new_products, query_product_ids, replace_index_with_queried_id
 
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
 BASKET_ITEMS_TABLE = "basket_items"
-from create_conn_string import create_url
+from create_conn_string import *
 
 def load_table(df,table):  #pass in pandasdataframe and table in database
-    url = create_url()
+    url = create_url_2()
     db = create_engine(url)
     conn = db.connect()
-    df.to_sql(table, con=conn, if_exists='append',
-            index=False)
+    df.to_sql(table, con=conn, if_exists='append', index=False)
 
     conn.close()
 

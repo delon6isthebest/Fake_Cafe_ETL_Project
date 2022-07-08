@@ -12,7 +12,7 @@ def query_id(conn, cursor, row_index: int, products_df:pd.DataFrame):
     products_size = products_df['size'].loc[row_index]
     products_flavour = products_df['flavour'].loc[row_index]
     values = [products_name, products_size, products_flavour]
-    cursor.execute(f'SELECT id FROM products WHERE name = %s AND size = %s AND flavour = %s', values)
+    cursor.execute(f'SELECT id FROM "dev_delon6_team1"."public"."products" WHERE name = \'{products_name}\' AND size = \'{products_size}\' AND flavour = \'{products_flavour}\'')
     sql_id = cursor.fetchone()[0]
 
     return sql_id
@@ -29,7 +29,7 @@ def replace_index_with_queried_id(df, products_df):
 
 # TODO: Define function that determines which products are new. Then call it in load.py
 def get_new_products(conn, cursor, df):
-        products_query='SELECT * FROM products'
+        products_query='SELECT * FROM "dev_delon6_team1"."public"."products"'
         cursor.execute(products_query)
         pdt_table_data=cursor.fetchall()
         pdt_table_data_df=pd.DataFrame.from_records(pdt_table_data, columns=[x[0] for x in cursor.description])
