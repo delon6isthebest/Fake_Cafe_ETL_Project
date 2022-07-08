@@ -1,13 +1,20 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Sample template to illustrate use of existing S3 bucket as an event source for a Lambda function
+  Template to deploy a lambda which is triggered by an S3 event.
 Parameters:
-  NotificationBucket:
-    Type: String
-    Description: S3 bucket that's used for the Lambda event notification
+ DeploymentBucket:
+  Type: String
+  Description: This is the place where the zip and templates are stored
+ DeploymentPackageKey:
+  Type: String
+  Description: Name of the zip file
+ NotificationBucket:
+  Type: String
+  Description: S3 bucket  used for the Lambda event notification
 Resources:
   LambdaIAMRole:
     Type: 'AWS::IAM::Role'
+    DeletionPolicy : Retain
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -36,19 +43,80 @@ Resources:
                 Resource: '*'
   T1LambdaFunction:
     Type: 'AWS::Lambda::Function'
+    DeletionPolicy : Retain
     Properties:
       Code:
         ZipFile: |
+          # TODO: Package all dependencies: cryptography, 
+          import pandas as pd
+          import urllib.parse
+          import boto3
           import logging
+          import sqlalchemy
+          import os
+          from extractcsv import read_csvfile_into_dataframe
+          #from test_table import create_sales_tables
+          from load import *
+          #from transform_3nf import *
+          #from suppress_pii import encrypt_pii,decrypt_pii
+          from transform_3nf import third_normal_form
+          import suppress_pii as pii
+
+          from create_db import *
+
+          TRANSACTIONS_TABLE = "transactions"
+          PRODUCTS_TABLE = "products"
+          BASKET_ITEMS_TABLE = "basket_items"
+
+          s3 = boto3.client('s3')
+
+          # s3_r = boto3.resource('s3')
+
           LOGGER = logging.getLogger()
           LOGGER.setLevel(logging.INFO)
           def handler(event, context):
-            LOGGER.info(f'Event structure: {event}')
+              LOGGER.info(f'Event structure: {event}')
+              #Get the object from the event 
+              #for i in event['Records']['s3']['bucket']['name']:
+              #print(event)
+              bucket = event['Records'][0]['s3']['bucket']['name']
+              key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+              print(f"KEY = {key}")
+              file_name =  '/tmp/' + key.split("/")[-1]
+              s3 = boto3.client('s3')
+              s3.download_file(bucket, key, file_name)
+              #lst = os.listdir()
+              #print(lst)
+              
+              #Extract the csv
+              data_df = read_csvfile_into_dataframe(file_name)
+              #print(df)
+              #Drop the card number column from the dataframe
+              
+              
+              pii.drop_column(data_df, "card_number")
+              # secretkey = pii.load_key()
+              # pii.encrypt_pii(data_df, "customer_name")
+              # 3. Generate UUID for transactions, then efficently represent the cleaned data
+              table_dict = third_normal_form(data_df)     # TODO: In line 92, add UUID
+              # print(table_dict[TRANSACTIONS_TABLE])
+              # print(table_dict[PRODUCTS_TABLE])
+              # print(table_dict[BASKET_ITEMS_TABLE])
+              
+              # SQS
+              
+              #LOAD
+              
+              # Connect to Redshift using Psycopg2
+              (conn, cursor) = connect_db()
+              create_tables(conn, cursor)
+              load_mvp_tables(conn, cursor, table_dict)
+              save_and_close_connection(conn, cursor)
       Handler: index.handler
       FunctionName: T1LambdaFunction
       Layers: 
+       - arn:aws:lambda:eu-west-1:506555054152:layer:Team1-Dependencies-1:1
        - arn:aws:lambda:eu-west-1:506555054152:layer:psycopg2:8
-       - arn:aws:lambda:eu-west-1:506555054152:layer:pandas_layer_team_1:6
       Role: !GetAtt LambdaIAMRole.Arn
       Runtime: python3.9
       Timeout: 30
@@ -60,75 +128,30 @@ Resources:
       Principal: s3.amazonaws.com
       SourceAccount: !Ref 'AWS::AccountId'
       SourceArn: !Sub 'arn:aws:s3:::${NotificationBucket}'
-  CustomResourceLambdaFunction:
+  LambdaFunction:
     Type: 'AWS::Lambda::Function'
+    DeletionPolicy : Retain
     Properties:
       Handler: index.lambda_handler
       Role: !GetAtt LambdaIAMRole.Arn
       Code:
-        ZipFile: |
-            from __future__ import print_function
-            import json
-            import boto3
-            import cfnresponse
-            SUCCESS = "SUCCESS"
-            FAILED = "FAILED"
-            print('Loading function')
-            s3 = boto3.resource('s3')
-            def lambda_handler(event, context):
-                print("Received event: " + json.dumps(event, indent=2))
-                responseData={}
-                try:
-                    if event['RequestType'] == 'Delete':
-                        print("Request Type:",event['RequestType'])
-                        Bucket=event['ResourceProperties']['Bucket']
-                        delete_notification(Bucket)
-                        print("Sending response to custom resource after Delete")
-                    elif event['RequestType'] == 'Create' or event['RequestType'] == 'Update':
-                        print("Request Type:",event['RequestType'])
-                        LambdaArn=event['ResourceProperties']['LambdaArn']
-                        Bucket=event['ResourceProperties']['Bucket']
-                        add_notification(LambdaArn, Bucket)
-                        responseData={'Bucket':Bucket}
-                        print("Sending response to custom resource")
-                    responseStatus = 'SUCCESS'
-                except Exception as e:
-                    print('Failed to process:', e)
-                    responseStatus = 'FAILED'
-                    responseData = {'Failure': 'Something bad happened.'}
-                cfnresponse.send(event, context, responseStatus, responseData)
-            def add_notification(LambdaArn, Bucket):
-                bucket_notification = s3.BucketNotification(Bucket)
-                response = bucket_notification.put(
-                  NotificationConfiguration={
-                    'LambdaFunctionConfigurations': [
-                      {
-                          'LambdaFunctionArn': LambdaArn,
-                          'Events': [
-                              's3:ObjectCreated:*'
-                          ]
-                      }
-                    ]
-                  }
-                )
-                print("Put request completed....")
-            def delete_notification(Bucket):
-                bucket_notification = s3.BucketNotification(Bucket)
-                response = bucket_notification.put(
-                    NotificationConfiguration={}
-                )
-                print("Delete request completed....")
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: !Ref DeploymentPackageKey
       Runtime: python3.9
       Timeout: 50
-  LambdaTrigger:
-    Type: 'Custom::LambdaTrigger'
-    DependsOn: LambdaInvokePermission
-    Properties:
-      ServiceToken: !GetAtt CustomResourceLambdaFunction.Arn
-      LambdaArn: !GetAtt T1LambdaFunction.Arn
-      Bucket: !Ref NotificationBucket
-  RawBucket:
+  S3BucketPermission:
+   Type: AWS::Lambda::Permission
+   Properties:
+    Action: lambda:InvokeFunction
+    FunctionName: !Ref T1LambdaFunction
+    Principal: s3.amazonaws.com
+    SourceArn: !GetAtt S3Bucket.Arn
+  S3Bucket:
     Type: AWS::S3::Bucket
     DeletionPolicy : Retain
     Properties: 
       BucketName: delon6-team1-raw-data
+      NotificationConfiguration:
+        LambdaConfigurations:
+              - Event: s3:ObjectCreated:*
+                Function: !GetAtt LambdaFunction.Arn
