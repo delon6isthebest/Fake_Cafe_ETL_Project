@@ -41,78 +41,94 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource: 
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/redshift-cluster-master-pass'
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/team1-redshift-credentials'
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/team1-encryption'
+              - Effect: Allow
+                Action:
+                  - "ec2:*"
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - s3:GetObject
+                - s3:PutObject
+                Resource: arn:aws:s3:::*
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - ec2:CreateNetworkInterface
+                - ec2:DescribeNetworkInterfaces
+                - ec2:DeleteNetworkInterface
+                - ec2:AssignPrivateIpAddresses
+                - ec2:UnassignPrivateIpAddresses
+                Resource: "*"
+              - Sid: DataAPIPermissions
+                Effect: Allow
+                Action:
+                - redshift-data:BatchExecuteStatement
+                - redshift-data:ExecuteStatement
+                - redshift-data:CancelStatement
+                - redshift-data:ListStatements
+                - redshift-data:GetStatementResult
+                - redshift-data:DescribeStatement
+                - redshift-data:ListDatabases
+                - redshift-data:ListSchemas
+                - redshift-data:ListTables
+                - redshift-data:DescribeTable
+                Resource: "*"
+              - Sid: SecretsManagerPermissions
+                Effect: Allow
+                Action:
+                - secretsmanager:GetSecretValue
+                Resource: "*"
+                Condition:
+                  StringLike:
+                    secretsmanager:ResourceTag/RedshiftDataFullAccess: "*"
+              - Sid: GetCredentialsForAPIUser
+                Effect: Allow
+                Action: redshift:GetClusterCredentials
+                Resource:
+                - arn:aws:redshift:*:*:dbname:*/*
+                - arn:aws:redshift:*:*:dbuser:*/redshift_data_api_user
+              - Sid: GetCredentialsForServerless
+                Effect: Allow
+                Action: redshift-serverless:GetCredentials
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/RedshiftDataFullAccess: "*"
+              - Sid: DenyCreateAPIUser
+                Effect: Deny
+                Action: redshift:CreateClusterUser
+                Resource:
+                - arn:aws:redshift:*:*:dbuser:*/redshift_data_api_user
+              - Sid: ServiceLinkedRole
+                Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: arn:aws:iam::*:role/aws-service-role/redshift-data.amazonaws.com/AWSServiceRoleForRedshift
+                Condition:
+                  StringLike:
+                    iam:AWSServiceName: redshift-data.amazonaws.com
   T1LambdaFunction:
     Type: 'AWS::Lambda::Function'
     DeletionPolicy : Retain
     Properties:
       Code:
-        ZipFile: |
-          # TODO: Package all dependencies: cryptography, 
-          import pandas as pd
-          import urllib.parse
-          import boto3
-          import logging
-          import sqlalchemy
-          import os
-          from extractcsv import read_csvfile_into_dataframe
-          #from test_table import create_sales_tables
-          from load import *
-          #from transform_3nf import *
-          #from suppress_pii import encrypt_pii,decrypt_pii
-          from transform_3nf import third_normal_form
-          import suppress_pii as pii
-
-          from create_db import *
-
-          TRANSACTIONS_TABLE = "transactions"
-          PRODUCTS_TABLE = "products"
-          BASKET_ITEMS_TABLE = "basket_items"
-
-          s3 = boto3.client('s3')
-
-          # s3_r = boto3.resource('s3')
-
-          LOGGER = logging.getLogger()
-          LOGGER.setLevel(logging.INFO)
-          def handler(event, context):
-              LOGGER.info(f'Event structure: {event}')
-              #Get the object from the event 
-              #for i in event['Records']['s3']['bucket']['name']:
-              #print(event)
-              bucket = event['Records'][0]['s3']['bucket']['name']
-              key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-              print(f"KEY = {key}")
-              file_name =  '/tmp/' + key.split("/")[-1]
-              s3 = boto3.client('s3')
-              s3.download_file(bucket, key, file_name)
-              #lst = os.listdir()
-              #print(lst)
-              
-              #Extract the csv
-              data_df = read_csvfile_into_dataframe(file_name)
-              #print(df)
-              #Drop the card number column from the dataframe
-              
-              
-              pii.drop_column(data_df, "card_number")
-              # secretkey = pii.load_key()
-              # pii.encrypt_pii(data_df, "customer_name")
-              # 3. Generate UUID for transactions, then efficently represent the cleaned data
-              table_dict = third_normal_form(data_df)     # TODO: In line 92, add UUID
-              # print(table_dict[TRANSACTIONS_TABLE])
-              # print(table_dict[PRODUCTS_TABLE])
-              # print(table_dict[BASKET_ITEMS_TABLE])
-              
-              # SQS
-              
-              #LOAD
-              
-              # Connect to Redshift using Psycopg2
-              (conn, cursor) = connect_db()
-              create_tables(conn, cursor)
-              load_mvp_tables(conn, cursor, table_dict)
-              save_and_close_connection(conn, cursor)
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: !Ref DeploymentPackageKey
       Handler: index.handler
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-0b925cb0ae57a9172 
+        SubnetIds:
+          - subnet-0301cc2930d250cce 
+          - subnet-00fa915b8bd85087d 
       FunctionName: T1LambdaFunction
       Layers: 
        - arn:aws:lambda:eu-west-1:506555054152:layer:Team1-Dependencies-1:1
@@ -128,24 +144,13 @@ Resources:
       Principal: s3.amazonaws.com
       SourceAccount: !Ref 'AWS::AccountId'
       SourceArn: !Sub 'arn:aws:s3:::${NotificationBucket}'
-  LambdaFunction:
-    Type: 'AWS::Lambda::Function'
-    DeletionPolicy : Retain
-    Properties:
-      Handler: index.lambda_handler
-      Role: !GetAtt LambdaIAMRole.Arn
-      Code:
-        S3Bucket: !Ref DeploymentBucket
-        S3Key: !Ref DeploymentPackageKey
-      Runtime: python3.9
-      Timeout: 50
   S3BucketPermission:
-   Type: AWS::Lambda::Permission
-   Properties:
-    Action: lambda:InvokeFunction
-    FunctionName: !Ref T1LambdaFunction
-    Principal: s3.amazonaws.com
-    SourceArn: !GetAtt S3Bucket.Arn
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref T1LambdaFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt S3Bucket.Arn
   S3Bucket:
     Type: AWS::S3::Bucket
     DeletionPolicy : Retain
@@ -154,4 +159,4 @@ Resources:
       NotificationConfiguration:
         LambdaConfigurations:
               - Event: s3:ObjectCreated:*
-                Function: !GetAtt LambdaFunction.Arn
+                Function: !GetAtt T1LambdaFunction.Arn
