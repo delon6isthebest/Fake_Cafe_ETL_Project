@@ -133,6 +133,21 @@ def create_tables(conn, cursor):
     # cursor.execute(create_etl_last_run_table)
     conn.commit()
 
+
+def create_load_tracker_table(conn, cursor):
+    create_load_tracker_table=\
+        """
+        CREATE TABLE IF NOT EXISTS "public"."load_tracker" (
+            "id" BIGINT IDENTITY(1,1),
+            "csv_filename" VARCHAR(100) NOT NULL,
+            "load_date" DATE,
+            CONSTRAINT "load_tracker_pkey" PRIMARY KEY ("id")
+        );
+        """
+    cursor.execute(create_load_tracker_table)
+    conn.commit()
+
+
 def create_mvp_tables(conn,cursor):
     create_products_trfmd_table = \
         """
