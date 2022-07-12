@@ -1,13 +1,23 @@
 
-# import hashlib
-from cryptography.fernet import Fernet
-from faker import Faker
+import hashlib
+# from cryptography.fernet import Fernet
+# from faker import Faker
 import pandas as pd
 pd.set_option('display.max_colwidth', None)
 from cmath import nan
-
+import boto3
 
 # df = pd.read_csv('test.csv')          #Reading csv file from src directory
+
+def hash_func(customer_info):
+    str_hash=customer_info.encode()                 # Encode the customer info using UTF-8 default
+    return hashlib.sha256(str_hash).hexdigest()     # Hash using SHA-256
+
+def create_hash_feature(df,existing_feat):                    # Apply hashing function to the feature
+    # if pd.dtypes(df[existing_feat])!=str:
+    df[existing_feat]=df[existing_feat].astype(str)
+    df[existing_feat] = df[existing_feat].apply(lambda x:hash_func(x))
+    return  df
 
 def generate_key():                        #Generates a key and save it into a file
     key = Fernet.generate_key()
@@ -28,12 +38,6 @@ def drop_column(df,column):
     return df
 
 # drop_column(df,'card_number')
-
-def suppress_pii(df,column):
-    fake=Faker()
-    df[column]=df[column].apply(lambda x:fake.name())
-    return df
-
 # print(suppress_pii(df,'customer_name'))
 
 def encryption(value):
@@ -50,10 +54,14 @@ def encrypt_pii(df,column):
 # print(encrypt_pii(df,'customer_name'))
 
 def load_key():
-    try:                                    #Loads the key named `secret.key` from the current directory.
-        return open("secretkey.txt", "rb").read()
-    except:
-        return generate_key()
+    ssm = boto3.client('ssm')
+    parameter = ssm.get_parameter(Name='team1-encryption', WithDecryption=True)
+    return parameter['Parameter']['Value']
+
+#     try:                                    #Loads the key named `secret.key` from the current directory.
+#         return open("secretkey.txt", "rb").read()
+#     except:
+#         return generate_key()
 
 def encryption(value):  
     key = load_key()        #Accessing previously generated key

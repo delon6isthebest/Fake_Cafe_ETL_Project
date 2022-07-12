@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
-from create_db import connect_to_db
+# from create_db import connect_t_db
 import uuid
 #from product_query import query_id
 TEST_CSV = "test.csv" # Located in 'src' folder
@@ -89,7 +89,7 @@ def extract_subtable(df:pd.DataFrame, subcolumns:list, foreign_key:str):
 
 def third_normal_form(data_df: pd.DataFrame) -> dict:
     #TODO: Add UUIDs in column data_df[TRANSACTION_UUID]
-    data_df[TRANSACTION_UUID] = data_df.apply(lambda _: uuid.uuid4(), axis=1)
+    data_df[TRANSACTION_UUID] = data_df.apply(lambda _: uuid.uuid4(), axis=1).astype(str)
     # Start 3NF
     transactions_df = extract_subtable(data_df, TRANSACTION_COLUMNS, TRANSACTION_ID)
     # customers_df = extract_subtable(transactions_df, ['customer_name'], 'customer_id')

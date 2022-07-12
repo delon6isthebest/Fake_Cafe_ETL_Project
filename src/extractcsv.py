@@ -2,6 +2,10 @@
 import csv
 import pandas as pd
 
+COLUMNS = [
+    'timestamp','store','customer_name','basket_items','total_price','cash_or_card','card_number'
+]
+
 def read_csvfile_into_list(file_name: str):
     try:
         list_dicts = []
@@ -17,11 +21,16 @@ def read_csvfile_into_list(file_name: str):
 
 def read_csvfile_into_dataframe(file_name: str):
     try:
-        df = pd.read_csv(file_name)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], format = '%d/%m/%Y %H:%M')       
+        df = pd.read_csv(file_name, names=COLUMNS)
+        def reformat_timestamp(old_timestamp):
+            [date, time] = old_timestamp.split(" ")
+            [day, month, year] = date.split("/")
+            return f"{year}-{month}-{day} {time}"
+        df["timestamp"] = df["timestamp"].apply(reformat_timestamp)
+        # df['timestamp'] = pd.to_datetime(df['timestamp'], format = '%Y/%m/%d %H:%M')  #TODO     
         return df
     except FileNotFoundError:
-
+        
         return None
 
 # print(read_csvfile_into_dataframe("test.csv"))
