@@ -42,7 +42,7 @@ jobs:
         aws-region: eu-west-1
     
     - name: Execute cloudformation command
-      run: aws cloudformation deploy --template-file T1cloudformation.yml --stack-name genteam1stk --s3-bucket rawt3data --region eu-west-1 --parameter-overrides NotificationBucket=delon6-team1-raw-data DeploymentBucket=rawt3data DeploymentPackageKey=src.zip --capabilities CAPABILITY_IAM
+      run: aws cloudformation deploy --template-file templates/T1cloudformation.yaml --stack-name genteam1stk --s3-bucket rawt3data --region eu-west-1 --parameter-overrides NotificationBucket=delon6-team1-raw-data DeploymentBucket=rawt3data DeploymentPackageKey=src.zip --capabilities CAPABILITY_IAM
 
 
 
