@@ -133,9 +133,10 @@ Resources:
       Layers: 
        - arn:aws:lambda:eu-west-1:506555054152:layer:Team1-Dependencies-1:1
        - arn:aws:lambda:eu-west-1:506555054152:layer:psycopg2:8
+      MemorySize: 256
       Role: !GetAtt LambdaIAMRole.Arn
       Runtime: python3.9
-      Timeout: 30
+      Timeout: 300
   LambdaInvokePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
