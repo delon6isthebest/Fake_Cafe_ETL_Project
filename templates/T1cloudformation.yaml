@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Template to deploy a lambda which is triggered by an S3 event.
+Parameters:
+ DeploymentBucket:
+  Type: String
+  Description: This is the place where the zip and templates are stored
+ DeploymentPackageKey:
+  Type: String
+  Description: Name of the zip file
+ NotificationBucket:
+  Type: String
+  Description: S3 bucket  used for the Lambda event notification
+Resources:
+  LambdaIAMRole:
+    Type: 'AWS::IAM::Role'
+    DeletionPolicy : Retain
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LambdaLogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetBucketNotification'
+                  - 's3:PutBucketNotification'
+                Resource: !Sub 'arn:aws:s3:::${NotificationBucket}'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource: 
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/redshift-cluster-master-pass'
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/team1-redshift-credentials'
+                  - 'arn:aws:ssm:eu-west-1:506555054152:parameter/team1-encryption'
+              - Effect: Allow
+                Action:
+                  - "ec2:*"
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - s3:GetObject
+                - s3:PutObject
+                Resource: arn:aws:s3:::*
+              - Effect: Allow
+                Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - ec2:CreateNetworkInterface
+                - ec2:DescribeNetworkInterfaces
+                - ec2:DeleteNetworkInterface
+                - ec2:AssignPrivateIpAddresses
+                - ec2:UnassignPrivateIpAddresses
+                Resource: "*"
+              - Sid: DataAPIPermissions
+                Effect: Allow
+                Action:
+                - redshift-data:BatchExecuteStatement
+                - redshift-data:ExecuteStatement
+                - redshift-data:CancelStatement
+                - redshift-data:ListStatements
+                - redshift-data:GetStatementResult
+                - redshift-data:DescribeStatement
+                - redshift-data:ListDatabases
+                - redshift-data:ListSchemas
+                - redshift-data:ListTables
+                - redshift-data:DescribeTable
+                Resource: "*"
+              - Sid: SecretsManagerPermissions
+                Effect: Allow
+                Action:
+                - secretsmanager:GetSecretValue
+                Resource: "*"
+                Condition:
+                  StringLike:
+                    secretsmanager:ResourceTag/RedshiftDataFullAccess: "*"
+              - Sid: GetCredentialsForAPIUser
+                Effect: Allow
+                Action: redshift:GetClusterCredentials
+                Resource:
+                - arn:aws:redshift:*:*:dbname:*/*
+                - arn:aws:redshift:*:*:dbuser:*/redshift_data_api_user
+              - Sid: GetCredentialsForServerless
+                Effect: Allow
+                Action: redshift-serverless:GetCredentials
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/RedshiftDataFullAccess: "*"
+              - Sid: DenyCreateAPIUser
+                Effect: Deny
+                Action: redshift:CreateClusterUser
+                Resource:
+                - arn:aws:redshift:*:*:dbuser:*/redshift_data_api_user
+              - Sid: ServiceLinkedRole
+                Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: arn:aws:iam::*:role/aws-service-role/redshift-data.amazonaws.com/AWSServiceRoleForRedshift
+                Condition:
+                  StringLike:
+                    iam:AWSServiceName: redshift-data.amazonaws.com
+  T1LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    DeletionPolicy : Retain
+    Properties:
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: !Ref DeploymentPackageKey
+      Handler: index.handler
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-0b925cb0ae57a9172 
+        SubnetIds:
+          - subnet-0301cc2930d250cce 
+          - subnet-00fa915b8bd85087d 
+      FunctionName: T1LambdaFunction
+      Layers: 
+       - arn:aws:lambda:eu-west-1:506555054152:layer:Team1-Dependencies-1:1
+       - arn:aws:lambda:eu-west-1:506555054152:layer:psycopg2:8
+      Role: !GetAtt LambdaIAMRole.Arn
+      Runtime: python3.9
+      Timeout: 30
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt T1LambdaFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Sub 'arn:aws:s3:::${NotificationBucket}'
+  S3BucketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref T1LambdaFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt S3Bucket.Arn
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy : Retain
+    Properties: 
+      BucketName: delon6-team1-raw-data
+      NotificationConfiguration:
+        LambdaConfigurations:
+              - Event: s3:ObjectCreated:*
+                Function: !GetAtt T1LambdaFunction.Arn
