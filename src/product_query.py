@@ -53,13 +53,44 @@ def get_new_products(conn, cursor, df):
                 #print(merged)
         return merged.drop(['id'],axis=1)
         #print(df)
-        #return df                                    
+        #return df
+        # 
+
+def get_new_products_2(df, pdt_table_data_df):
+    pdt_table_data_df['is_new'] = 'master'
+    # pdt_table_data_df.set_index('master', append=True, inplace=True)
+    #print(pdt_table_data_df)
+    df['is_new'] = 'daily'
+    # df.set_index('daily', append=True, inplace=True)
+    #print(df)
+
+    merged = pdt_table_data_df.append(df)
+    #print(merged)
+    merged = merged.drop_duplicates(subset=['name', 'size','flavour'], keep=False).sort_index()
+    new_products = merged[merged["is_new"] == "daily"]
+    #print('Merged:',merged)
+    # idx = pd.IndexSlice
+    #print(idx)
+    # if not merged.empty:
+    #         merged=merged.loc[idx[:, 'daily'], :]
+    #         print("\nIt has merged\n")
+    #         merged=merged.reset_index(drop=True)
+            #print(merged)
+    # return merged.drop(['id'],axis=1)
+    return new_products[PRODUCTS_COLUMNS]
+
+
+
                                                     
 if __name__ == "__main__":
-    from transform_3nf import * # Only needed when testing out how they combine
-    from create_db import *
+    pdt_table_data_df = pd.read_csv("products.csv")
+    products_df = pd.read_csv("new_products.csv")
+    print(get_new_products_2(products_df, pdt_table_data_df))
+
+    # from transform_3nf import * # Only needed when testing out how they combine
+    # from create_db import *
     # Connect to db and store in variable by creating the connection object and the cursor object
-    (conn, cursor) = connect_to_db()
+    # (conn, cursor) = connect_to_db()
     # df = pd.read_csv(TEST_CSV)
     # del df['card_number']
     # df = split_basket_items(df)

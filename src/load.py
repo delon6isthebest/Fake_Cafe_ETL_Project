@@ -12,7 +12,7 @@ from create_db import connect_db, save_and_close_connection, create_load_tracker
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
 BASKET_ITEMS_TABLE = "basket_items"
-from create_conn_string import *
+# from create_conn_string import *
 
 def load_table(df,table):  #pass in pandasdataframe and table in database
     url = create_url_2()
