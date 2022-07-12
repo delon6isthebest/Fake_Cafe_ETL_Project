@@ -1,0 +1,51 @@
+name: cicd
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build: 
+    name: Build stack resources
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: zip github repository
+      run: zip -r -j src.zip src/*
+ 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_IAM_TEAM1_CICD_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_IAM_TEAM1_CICD_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+    
+    - name: Deploy stack to AWS
+      run: aws s3 cp ./src.zip s3://rawt3data/src.zip
+      
+  deploy:
+    name: deploy stack to AWS
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_IAM_TEAM1_CICD_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_IAM_TEAM1_CICD_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+    
+    - name: Execute cloudformation command
+      run: aws cloudformation deploy --template-file templates/T1cloudformation.yaml --stack-name genteam1stk --s3-bucket rawt3data --region eu-west-1 --parameter-overrides NotificationBucket=delon6-team1-raw-data DeploymentBucket=rawt3data DeploymentPackageKey=src.zip --capabilities CAPABILITY_IAM
+
+
+
+
+
+
