@@ -55,8 +55,12 @@ def handler(event, context):
         # Connect to Redshift using Psycopg2
         (conn, cursor) = connect_db()
         create_tables(conn, cursor)
-        load_mvp_tables(conn, cursor, table_dict)
-        insert_load_date(conn, cursor, file_name, "load_tracker")
+        try:
+            load_mvp_tables(conn, cursor, table_dict)
+            insert_load_date(conn, cursor, file_name, "load_tracker")
+        except Exception as e:
+            LOGGER.warning(e)
+            conn.rollback()
         save_and_close_connection(conn, cursor)
         
         

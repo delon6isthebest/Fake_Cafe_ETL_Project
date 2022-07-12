@@ -7,12 +7,12 @@ from sqlalchemy import create_engine
 from product_query import get_new_products, query_product_ids, replace_index_with_queried_id
 from datetime import datetime
 from create_db import connect_db, save_and_close_connection, create_load_tracker_table
-
+import time
 
 TRANSACTIONS_TABLE = "transactions"
 PRODUCTS_TABLE = "products"
 BASKET_ITEMS_TABLE = "basket_items"
-# from create_conn_string import *
+#from create_conn_string import *
 
 def load_table(df,table):  #pass in pandasdataframe and table in database
     url = create_url_2()
@@ -70,11 +70,17 @@ def load_mvp_tables(conn, cursor, table_dict):
     """
     start_load = datetime.now().microsecond
     transactions_df = table_dict[TRANSACTIONS_TABLE]
-    load_table_2(conn, cursor, transactions_df, TRANSACTIONS_TABLE)
+    # load_table_2(conn, cursor, transactions_df, TRANSACTIONS_TABLE)
     products_df = table_dict[PRODUCTS_TABLE]
     baskets_df = table_dict[BASKET_ITEMS_TABLE]
+    print("Determining new products")
     new_products_df = get_new_products(conn, cursor, products_df)                      #TODO: Call the function defined in product_query.py
+    print(new_products_df)
+    time.sleep(30)
+    print("Loading new products")
     load_table_2(conn, cursor, new_products_df, PRODUCTS_TABLE)
+    time.sleep(30)
+    load_table_2(conn, cursor, transactions_df, TRANSACTIONS_TABLE)
     mid_load = datetime.now().microsecond
     print(f"1st Half Load Time = {mid_load - start_load}")
     query_product_ids(conn, cursor, products_df)
